@@ -54,7 +54,7 @@ else:
         pickle.dump(names,f)
 
 
-if 'faces_data.pkl' not in os.listdir('data/'):
+if 'faces_data.pkl' not in os.listdir('data/'): 
     with open('data/faces_data.pkl', 'wb') as f:
         pickle.dump(faces_data, f)
 else:
