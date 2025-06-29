@@ -27,7 +27,7 @@ knn = KNeighborsClassifier(n_neighbors=5)
 knn.fit(FACES, LABELS)
 
 # Load background image
-imgBackground = cv2.imread("background.jpg")
+imgBackground = cv2.imread("background.png")
 
 # Define where to place the webcam frame on the background
 top_offset = 162
