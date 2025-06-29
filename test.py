@@ -1,9 +1,9 @@
-from sklearn.neighbors import KNeighborsClassifier
 import cv2
 import pickle
 import numpy as np
 import os
 import time
+from sklearn.neighbors import KNeighborsClassifier
 
 # Initialize video capture from webcam
 video = cv2.VideoCapture(0)
@@ -30,8 +30,8 @@ knn.fit(FACES, LABELS)
 imgBackground = cv2.imread("background.png")
 
 # Define where to place the webcam frame on the background
-top_offset = 162
-left_offset = 55
+top_offset = 200
+left_offset = 180
 frame_height = 480
 frame_width = 640
 
