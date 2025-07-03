@@ -4,6 +4,8 @@ import numpy as np
 import os
 import time
 from sklearn.neighbors import KNeighborsClassifier
+import csv
+
 
 # Initialize video capture from webcam
 video = cv2.VideoCapture(0)
