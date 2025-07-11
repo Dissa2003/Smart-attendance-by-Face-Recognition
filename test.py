@@ -12,6 +12,10 @@ def speak(str1):
     speak = Dispatch("SAPI.SpVoice")
     speak.Speak(str1)
 
+# Ensure Attendence folder exists
+if not os.path.exists("Attendence"):
+    os.makedirs("Attendence")
+
 # Initialize webcam
 video = cv2.VideoCapture(0)
 
@@ -48,6 +52,7 @@ if imgBackground is None or imgBackground.shape[0] < required_height or imgBackg
     imgBackground = cv2.resize(imgBackground, (required_width, required_height))
 
 COL_names = ['Name', 'Date', 'Time']
+marked_names = set()  # ✅ Keep track of who is already marked
 
 # Start the face recognition loop
 while True:
@@ -58,41 +63,51 @@ while True:
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = facedetect.detectMultiScale(gray, 1.3, 5)
 
-    attendance = []
+    current_time = datetime.now()
+    date_for_file = current_time.strftime('%Y-%m-%d')
+    time_str = current_time.strftime('%H:%M:%S')
+    filename = f"Attendence/Attendance_{date_for_file}.csv"
+    file_exists = os.path.isfile(filename)
+
     for (x, y, w, h) in faces:
         crop_img = frame[y:y+h, x:x+w]
         resized_img = cv2.resize(crop_img, (50, 50)).flatten().reshape(1, -1)
         pred = knn.predict(resized_img)
+        name = str(pred[0])
 
-        current_time = datetime.now()
-        date_for_file = current_time.strftime('%Y-%m-%d')  # For filename (safe format)
-        time_str = current_time.strftime('%H:%M:%S')       # For display
-        datetime_str = current_time.strftime('%Y-%m-%d %H:%M:%S')
-
-        filename = f"Attendence/Attendance_{date_for_file}.csv"
-        file_exists = os.path.isfile(filename)
-
-        # Draw results
+        # Draw predictions on the frame
         cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
         cv2.rectangle(frame, (x, y-40), (x+w, y), (50, 50, 255), -1)
-        cv2.putText(frame, str(pred[0]), (x, y-10), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 1)
+        cv2.putText(frame, name, (x, y-10), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 1)
 
-        attendance = [str(pred[0]), date_for_file, time_str]
+        # Check key press
+        key = cv2.waitKey(1) & 0xFF
 
-    # Place frame on background
+        if key == ord('o'):
+            if name not in marked_names:
+                marked_names.add(name)
+                speak(f"{name}'s attendance taken")
+                time.sleep(1)
+
+                with open(filename, "a", newline='') as csvfile:
+                    writer = csv.writer(csvfile)
+                    if not file_exists:
+                        writer.writerow(COL_names)
+                        file_exists = True
+                    writer.writerow([name, date_for_file, time_str])
+            else:
+                speak(f"{name} is already marked present")
+                time.sleep(1)
+
+    # Show list of marked names on screen (optional UI)
+    y_offset = 30
+    for marked in marked_names:
+        cv2.putText(frame, f"Marked: {marked}", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        y_offset += 25
+
+    # Show the result on background
     imgBackground[top_offset:top_offset+frame_height, left_offset:left_offset+frame_width] = frame
     cv2.imshow('Face Recognition - Attendance System', imgBackground)
-
-    key = cv2.waitKey(1) & 0xFF
-
-    if key == ord('o') and attendance:
-        speak("Attendance Taken..")
-        time.sleep(1)
-        with open(filename, "a", newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            if not file_exists:
-                writer.writerow(COL_names)
-            writer.writerow(attendance)
 
     if key == ord('q'):
         break
